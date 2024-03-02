@@ -31,6 +31,7 @@
     const ladderHeight = 50;
     const platformCount = 10;
     const coinSize = 10;
+    const bonusSize = 15;
     const heroWidth = 20;
     const heroHeight = 20;
     const heroJumpHeight = 100;
@@ -40,6 +41,7 @@
     let platforms = [];
     let ladders = [];
     let coins = [];
+    let bonuses = [];
     let hero = { x: 0, y: 0, dx: 0, dy: 0, onPlatform: false, onLadder: false, jumping: false, life: maxLife, score: 0 };
 
     function init() {
@@ -78,6 +80,12 @@
         });
     }
 
+    function generateBonus() {
+        const x = Math.random() * (canvas.width - bonusSize);
+        const y = Math.random() * (canvas.height - bonusSize);
+        bonuses.push({ x, y, collected: false });
+    }
+
     function placeHero() {
         const randomPlatform = platforms[Math.floor(Math.random() * platforms.length)];
         hero.x = randomPlatform.x + (platformWidth - heroWidth) / 2;
@@ -100,12 +108,19 @@
                 ctx.fillRect(coin.x, coin.y, coinSize, coinSize);
             }
         });
+        bonuses.forEach(bonus => {
+            if (!bonus.collected) {
+                ctx.fillStyle = '#800080';
+                ctx.fillRect(bonus.x, bonus.y, bonusSize, bonusSize);
+            }
+        });
         ctx.fillStyle = '#ff0000';
         ctx.fillRect(hero.x, hero.y, heroWidth, heroHeight);
         ctx.fillStyle = '#000';
         ctx.font = '20px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(`Score: ${hero.score}`, canvas.width / 2, 30);
+        ctx.fillText(`Life: ${hero.life}`, canvas.width / 2, 30);
+        ctx.fillText(`Score: ${hero.score}`, canvas.width / 2, 60);
     }
 
     function handleKeyDown(event) {
@@ -197,6 +212,19 @@
             }
         });
 
+        // Check collision with bonuses
+        bonuses.forEach(bonus => {
+            if (!bonus.collected &&
+                hero.x < bonus.x + bonusSize &&
+                hero.x + heroWidth > bonus.x &&
+                hero.y < bonus.y + bonusSize &&
+                hero.y + heroHeight > bonus.y) {
+                bonus.collected = true;
+                const extraLife = Math.floor(Math.random() * 3) + 1;
+                hero.life += extraLife;
+            }
+        });
+
         // Check if the hero falls off the canvas
         if (!hero.onLadder && hero.y > canvas.height) {
             hero.life--;
@@ -210,6 +238,12 @@
         draw();
         requestAnimationFrame(update);
     }
+
+    setInterval(() => {
+        if (hero.life < maxLife) {
+            generateBonus();
+        }
+    }, 5000); // Generate bonus every 5 seconds when life < maxLife
 
     init();
 </script>
