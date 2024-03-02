@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Platformer Game</title>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f0f0f0;
+    }
+    canvas {
+        border: 2px solid #000;
+    }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const platformWidth = 100;
+    const platformHeight = 20;
+    const ladderWidth = 10;
+    const ladderHeight = 50;
+    const platformCount = 10;
+    const heroWidth = 20;
+    const heroHeight = 20;
+    const heroJumpHeight = 100;
+    const gravity = 0.2;
+    const maxLife = 3;
+
+    let platforms = [];
+    let ladders = [];
+    let hero = { x: 0, y: 0, dx: 0, dy: 0, onPlatform: false, onLadder: false, jumping: false, life: maxLife };
+
+    function init() {
+        generatePlatforms();
+        generateLadders();
+        placeHero();
+        draw();
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
+        requestAnimationFrame(update);
+    }
+
+    function generatePlatforms() {
+        for (let i = 0; i < platformCount; i++) {
+            const x = Math.random() * (canvas.width - platformWidth);
+            const y = i * (canvas.height / platformCount);
+            platforms.push({ x, y });
+        }
+    }
+
+    function generateLadders() {
+        for (let i = 0; i < platformCount - 1; i++) {
+            const platform = platforms[i];
+            const ladderX = platform.x + (platformWidth - ladderWidth) / 2;
+            const ladderY = platform.y - ladderHeight;
+            ladders.push({ x: ladderX, y: ladderY });
+        }
+    }
+
+    function placeHero() {
+        const randomPlatform = platforms[Math.floor(Math.random() * platforms.length)];
+        hero.x = randomPlatform.x + (platformWidth - heroWidth) / 2;
+        hero.y = randomPlatform.y - heroHeight;
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        platforms.forEach(platform => {
+            ctx.fillStyle = '#0000ff';
+            ctx.fillRect(platform.x, platform.y, platformWidth, platformHeight);
+        });
+        ladders.forEach(ladder => {
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(ladder.x, ladder.y, ladderWidth, ladderHeight);
+        });
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(hero.x, hero.y, heroWidth, heroHeight);
+    }
+
+    function handleKeyDown(event) {
+        if (event.key === 'ArrowLeft') {
+            hero.dx = -2;
+        } else if (event.key === 'ArrowRight') {
+            hero.dx = 2;
+        } else if (event.key === 'ArrowUp') {
+            if (hero.onLadder) {
+                hero.dy = -2;
+                hero.dx = 0; // Prevent horizontal movement on ladder
+            }
+        } else if (event.key === 'ArrowDown') {
+            if (hero.onLadder) {
+                hero.dy = 2;
+                hero.dx = 0; // Prevent horizontal movement on ladder
+            }
+        }
+    }
+
+    function handleKeyUp(event) {
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            hero.dx = 0;
+        } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+            hero.dy = 0;
+        }
+    }
+
+    function update() {
+        if (!hero.onLadder) { // Apply gravity only if not on ladder
+            hero.dy += gravity;
+        }
+
+        // Horizontal movement
+        hero.x += hero.dx;
+        if (hero.x < 0) {
+            hero.x = 0;
+        } else if (hero.x + heroWidth > canvas.width) {
+            hero.x = canvas.width - heroWidth;
+        }
+
+        // Vertical movement
+        hero.y += hero.dy;
+
+        // Check collision with platforms
+        hero.onPlatform = false;
+        platforms.forEach(platform => {
+            if (hero.x < platform.x + platformWidth &&
+                hero.x + heroWidth > platform.x &&
+                hero.y + heroHeight > platform.y &&
+                hero.y < platform.y + platformHeight) {
+                hero.dy = 0;
+                hero.jumping = false;
+                hero.onPlatform = true;
+                hero.y = platform.y - heroHeight;
+            }
+        });
+
+        // Check collision with ladders
+        hero.onLadder = false;
+        ladders.forEach(ladder => {
+            if (hero.x < ladder.x + ladderWidth &&
+                hero.x + heroWidth > ladder.x &&
+                hero.y + heroHeight > ladder.y &&
+                hero.y < ladder.y + ladderHeight) {
+                hero.onLadder = true;
+                if (hero.dy > 0) { // Moving downwards on ladder
+                    const nextPlatformIndex = platforms.findIndex(platform => platform.y > ladder.y && platform.x === ladder.x);
+                    if (nextPlatformIndex !== -1) {
+                        const nextPlatform = platforms[nextPlatformIndex];
+                        if (hero.y + heroHeight + hero.dy > nextPlatform.y) { // Reached next platform, stop descending
+                            hero.dy = 0;
+                            hero.y = nextPlatform.y - heroHeight;
+                        }
+                    }
+                }
+            }
+        });
+
+        // Check if the hero falls off the canvas
+        if (!hero.onLadder && hero.y > canvas.height) {
+            hero.life--;
+            if (hero.life === 0) {
+                alert('Game over');
+                return;
+            }
+            placeHero();
+        }
+
+        draw();
+        requestAnimationFrame(update);
+    }
+
+    init();
+</script>
+</body>
+</html>
