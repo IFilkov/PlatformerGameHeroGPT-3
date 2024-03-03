@@ -36,8 +36,8 @@
     const heroWidth = 20;
     const heroHeight = 20;
     const heroJumpHeight = 100;
-    const jumpHeight = 6 * heroHeight; // Высота прыжка - 6 квадратов
-    const jumpSpeed = 5; // Скорость прыжка
+    const jumpHeight = 4 * heroHeight; // Высота прыжка - 6 квадратов
+    const jumpSpeed = 8; // Скорость прыжка
     const gravity = 0.2;
     const maxLife = 3;
 
@@ -85,6 +85,7 @@
         platforms.push({ x: platformX, y: platformY });
     }
 }
+
 
 
 
@@ -224,95 +225,104 @@
     }
 }
 
-    function update() {
-        if (!hero.onLadder) { // Apply gravity only if not on ladder
-            hero.dy += gravity;
+function update() {
+    if (!hero.onLadder) { // Apply gravity only if not on ladder
+        hero.dy += gravity;
+    }
+
+    // Horizontal movement
+    hero.x += hero.dx;
+    if (hero.x < 0) {
+        hero.x = 0;
+    } else if (hero.x + heroWidth > canvas.width) {
+        hero.x = canvas.width - heroWidth;
+    }
+
+    // Vertical movement
+    hero.y += hero.dy;
+
+    // Check collision with platforms
+    hero.onPlatform = false;
+    platforms.forEach(platform => {
+        if (hero.x < platform.x + platformWidth &&
+            hero.x + heroWidth > platform.x &&
+            hero.y + heroHeight > platform.y &&
+            hero.y < platform.y + platformHeight) {
+            hero.dy = 0;
+            hero.jumping = false;
+            hero.onPlatform = true;
+            hero.y = platform.y - heroHeight;
         }
+    });
 
-        // Horizontal movement
-        hero.x += hero.dx;
-        if (hero.x < 0) {
-            hero.x = 0;
-        } else if (hero.x + heroWidth > canvas.width) {
-            hero.x = canvas.width - heroWidth;
-        }
-
-        // Vertical movement
-        hero.y += hero.dy;
-
-        // Check collision with platforms
-        hero.onPlatform = false;
-        platforms.forEach(platform => {
-            if (hero.x < platform.x + platformWidth &&
-                hero.x + heroWidth > platform.x &&
-                hero.y + heroHeight > platform.y &&
-                hero.y < platform.y + platformHeight) {
-                hero.dy = 0;
-                hero.jumping = false;
-                hero.onPlatform = true;
-                hero.y = platform.y - heroHeight;
-            }
-        });
-
-        // Check collision with ladders
-        hero.onLadder = false;
-        ladders.forEach(ladder => {
-            if (hero.x < ladder.x + ladderWidth &&
-                hero.x + heroWidth > ladder.x &&
-                hero.y + heroHeight > ladder.y &&
-                hero.y < ladder.y + ladderHeight) {
-                hero.onLadder = true;
-                if (hero.dy > 0) { // Moving downwards on ladder
-                    const nextPlatformIndex = platforms.findIndex(platform => platform.y > ladder.y && platform.x === ladder.x);
-                    if (nextPlatformIndex !== -1) {
-                        const nextPlatform = platforms[nextPlatformIndex];
-                        if (hero.y + heroHeight + hero.dy > nextPlatform.y) { // Reached next platform, stop descending
-                            hero.dy = 0;
-                            hero.y = nextPlatform.y - heroHeight;
-                        }
+    // Check collision with ladders
+    hero.onLadder = false;
+    ladders.forEach(ladder => {
+        if (hero.x < ladder.x + ladderWidth &&
+            hero.x + heroWidth > ladder.x &&
+            hero.y + heroHeight > ladder.y &&
+            hero.y < ladder.y + ladderHeight) {
+            hero.onLadder = true;
+            if (hero.dy > 0) { // Moving downwards on ladder
+                const nextPlatformIndex = platforms.findIndex(platform => platform.y > ladder.y && platform.x === ladder.x);
+                if (nextPlatformIndex !== -1) {
+                    const nextPlatform = platforms[nextPlatformIndex];
+                    if (hero.y + heroHeight + hero.dy > nextPlatform.y) { // Reached next platform, stop descending
+                        hero.dy = 0;
+                        hero.y = nextPlatform.y - heroHeight;
                     }
                 }
             }
-        });
-
-        // Check collision with coins
-        coins.forEach(coin => {
-            if (!coin.collected &&
-                hero.x < coin.x + coinSize &&
-                hero.x + heroWidth > coin.x &&
-                hero.y < coin.y + coinSize &&
-                hero.y + heroHeight > coin.y) {
-                coin.collected = true;
-                hero.score += 10;
-            }
-        });
-
-        // Check collision with bonuses
-        bonuses.forEach(bonus => {
-            if (!bonus.collected &&
-                hero.x < bonus.x + bonusSize &&
-                hero.x + heroWidth > bonus.x &&
-                hero.y < bonus.y + bonusSize &&
-                hero.y + heroHeight > bonus.y) {
-                bonus.collected = true;
-                const extraLife = Math.floor(Math.random() * 3) + 1;
-                hero.life += extraLife;
-            }
-        });
-
-        // Check if the hero falls off the canvas
-        if (!hero.onLadder && hero.y > canvas.height) {
-            hero.life--;
-            if (hero.life === 0) {
-                alert('Game over');
-                return;
-            }
-            placeHero();
         }
+    });
 
-        draw();
-        requestAnimationFrame(update);
+    // Check collision with coins
+    coins.forEach(coin => {
+        if (!coin.collected &&
+            hero.x < coin.x + coinSize &&
+            hero.x + heroWidth > coin.x &&
+            hero.y < coin.y + coinSize &&
+            hero.y + heroHeight > coin.y) {
+            coin.collected = true;
+            hero.score += 10;
+
+            // Check if the hero collected 10 coins
+            if (hero.score % 100 === 0) {
+                platforms = [];
+                coins = [];
+                generatePlatforms();
+                generateCoins();
+            }
+        }
+    });
+
+    // Check collision with bonuses
+    bonuses.forEach(bonus => {
+        if (!bonus.collected &&
+            hero.x < bonus.x + bonusSize &&
+            hero.x + heroWidth > bonus.x &&
+            hero.y < bonus.y + bonusSize &&
+            hero.y + heroHeight > bonus.y) {
+            bonus.collected = true;
+            const extraLife = Math.floor(Math.random() * 3) + 1;
+            hero.life += extraLife;
+        }
+    });
+
+    // Check if the hero falls off the canvas
+    if (!hero.onLadder && hero.y > canvas.height) {
+        hero.life--;
+        if (hero.life === 0) {
+            alert('Game over');
+            return;
+        }
+        placeHero();
     }
+
+    draw();
+    requestAnimationFrame(update);
+}
+
 
     setInterval(() => {
         if (hero.life < maxLife) {
