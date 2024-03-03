@@ -291,8 +291,10 @@ function update() {
             // Check if the hero collected 10 coins
             if (hero.score % 100 === 0) {
                 platforms = [];
+                ladders = [];
                 coins = [];
                 generatePlatforms();
+                generateLadders();
                 generateCoins();
             }
         }
@@ -324,6 +326,7 @@ function update() {
     draw();
     requestAnimationFrame(update);
 }
+
 
 
     setInterval(() => {
