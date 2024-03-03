@@ -290,13 +290,23 @@
         ctx.fillText(gameOverText, canvas.width / 2, canvas.height / 2);
 
         // Добавляем кнопку Restart
+        // const restartButton = document.createElement('button');
+        // restartButton.textContent = 'Restart';
+        // restartButton.style.position = 'absolute';
+        // restartButton.style.top = `${canvas.height / 2 + 50}px`;
+        // restartButton.style.left = `${canvas.width / 2 - 50}px`;
+        // restartButton.addEventListener('click', restartGame);
+        // canvas.parentNode.appendChild(restartButton);
+
+        // Добавляем кнопку Restart
         const restartButton = document.createElement('button');
         restartButton.textContent = 'Restart';
         restartButton.style.position = 'absolute';
-        restartButton.style.top = `${canvas.height / 2 + 50}px`;
-        restartButton.style.left = `${canvas.width / 2 - 50}px`;
+        restartButton.style.top = `${(canvas.height - 80) / 1}px`;
+        // restartButton.style.left = `${(canvas.width - 50) / 2}px`;
         restartButton.addEventListener('click', restartGame);
         canvas.parentNode.appendChild(restartButton);
+
     }
 
     function restartGame() {
