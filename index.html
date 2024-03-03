@@ -112,12 +112,14 @@
     // }
 
     function generateCoins() {
+    coins = []; // Очищаем массив монеток перед генерацией новых
     platforms.forEach(platform => {
-        const coinX = Math.random() * (platform.x + platformWidth - 2 * coinSize) + platform.x + coinSize;
-        const coinY = platform.y - coinSize - Math.random() * (platformHeight - 2 * coinSize);
+        const coinX = platform.x + Math.random() * (platformWidth - 2 * coinSize) + coinSize;
+        const coinY = platform.y - coinSize;
         coins.push({ x: coinX, y: coinY, collected: false });
-        });
-    }
+    });
+}
+
 
 
 
