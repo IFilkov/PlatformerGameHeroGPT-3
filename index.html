@@ -16,6 +16,7 @@
     }
     canvas {
         border: 2px solid #000;
+        background-color: lightblue;
     }
 </style>
 </head>
@@ -31,15 +32,19 @@
     const ladderHeight = 50;
     const platformCount = 10;
     const coinSize = 10;
+    const bonusSize = 15;
     const heroWidth = 20;
     const heroHeight = 20;
     const heroJumpHeight = 100;
+    const jumpHeight = 4 * heroHeight; // Высота прыжка - 6 квадратов
+    const jumpSpeed = 8; // Скорость прыжка
     const gravity = 0.2;
     const maxLife = 3;
 
     let platforms = [];
     let ladders = [];
     let coins = [];
+    let bonuses = [];
     let hero = { x: 0, y: 0, dx: 0, dy: 0, onPlatform: false, onLadder: false, jumping: false, life: maxLife, score: 0 };
 
     function init() {
@@ -55,9 +60,17 @@
 
     function generatePlatforms() {
         for (let i = 0; i < platformCount; i++) {
-            const x = Math.random() * (canvas.width - platformWidth);
-            const y = i * (canvas.height / platformCount);
-            platforms.push({ x, y });
+            let platformX, platformY;
+            do {
+                platformX = Math.random() * (canvas.width - platformWidth);
+                platformY = i * (canvas.height / platformCount);
+            } while (platforms.some(platform => Math.abs(platformX - platform.x) < platformWidth && Math.abs(platformY - platform.y) < platformHeight) ||
+                     coins.some(coin => Math.abs(platformX - coin.x) < platformWidth && Math.abs(platformY - coin.y) < platformHeight) ||
+                     ladders.some(ladder => Math.abs(platformX - ladder.x) < platformWidth && Math.abs(platformY - ladder.y) < platformHeight) ||
+                     platforms.some(platform => Math.abs(platformX + platformWidth - platform.x) < platformWidth && Math.abs(platformY - platform.y) < platformHeight) ||
+                     platforms.some(platform => Math.abs(platformY - platform.y) < platformHeight));
+
+            platforms.push({ x: platformX, y: platformY });
         }
     }
 
@@ -71,11 +84,18 @@
     }
 
     function generateCoins() {
-        ladders.forEach(ladder => {
-            const coinX = ladder.x + (ladderWidth - coinSize) / 2;
-            const coinY = ladder.y - coinSize;
+        coins = []; // Очищаем массив монеток перед генерацией новых
+        platforms.forEach(platform => {
+            const coinX = platform.x + Math.random() * (platformWidth - 2 * coinSize) + coinSize;
+            const coinY = platform.y - coinSize;
             coins.push({ x: coinX, y: coinY, collected: false });
         });
+    }
+
+    function generateBonus() {
+        const x = Math.random() * (canvas.width - bonusSize);
+        const y = Math.random() * (canvas.height - bonusSize);
+        bonuses.push({ x, y, collected: false });
     }
 
     function placeHero() {
@@ -100,12 +120,19 @@
                 ctx.fillRect(coin.x, coin.y, coinSize, coinSize);
             }
         });
+        bonuses.forEach(bonus => {
+            if (!bonus.collected) {
+                ctx.fillStyle = '#800080';
+                ctx.fillRect(bonus.x, bonus.y, bonusSize, bonusSize);
+            }
+        });
         ctx.fillStyle = '#ff0000';
         ctx.fillRect(hero.x, hero.y, heroWidth, heroHeight);
         ctx.fillStyle = '#000';
         ctx.font = '20px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(`Score: ${hero.score}`, canvas.width / 2, 30);
+        ctx.fillText(`Life: ${hero.life}`, canvas.width / 2, 30);
+        ctx.fillText(`Score: ${hero.score}`, canvas.width / 2, 60);
     }
 
     function handleKeyDown(event) {
@@ -123,6 +150,11 @@
                 hero.dy = 2;
                 hero.dx = 0; // Prevent horizontal movement on ladder
             }
+        } else if (event.key === ' ') { // Обработка клавиши "пробел"
+            if (!hero.jumping && hero.onPlatform) { // Прыгаем только если не в состоянии прыжка и на платформе
+                hero.dy = -jumpSpeed; // Устанавливаем скорость прыжка вверх
+                hero.jumping = true; // Устанавливаем флаг состояния прыжка
+            }
         }
     }
 
@@ -131,6 +163,10 @@
             hero.dx = 0;
         } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
             hero.dy = 0;
+        } else if (event.key === ' ') { // Обработка клавиши "пробел"
+            if (hero.jumping) { // Если был в состоянии прыжка
+                hero.dy = gravity; // Возвращаем гравитацию
+            }
         }
     }
 
@@ -194,6 +230,29 @@
                 hero.y + heroHeight > coin.y) {
                 coin.collected = true;
                 hero.score += 10;
+
+                // Check if the hero collected 10 coins
+                if (hero.score % 100 === 0) {
+                    platforms = [];
+                    ladders = [];
+                    coins = [];
+                    generatePlatforms();
+                    generateLadders();
+                    generateCoins();
+                }
+            }
+        });
+
+        // Check collision with bonuses
+        bonuses.forEach(bonus => {
+            if (!bonus.collected &&
+                hero.x < bonus.x + bonusSize &&
+                hero.x + heroWidth > bonus.x &&
+                hero.y < bonus.y + bonusSize &&
+                hero.y + heroHeight > bonus.y) {
+                bonus.collected = true;
+                const extraLife = Math.floor(Math.random() * 3) + 1;
+                hero.life += extraLife;
             }
         });
 
@@ -201,7 +260,7 @@
         if (!hero.onLadder && hero.y > canvas.height) {
             hero.life--;
             if (hero.life === 0) {
-                alert('Game over');
+                gameOver();
                 return;
             }
             placeHero();
@@ -211,6 +270,61 @@
         requestAnimationFrame(update);
     }
 
+    setInterval(() => {
+        if (hero.life < maxLife) {
+            generateBonus();
+        }
+    }, 5000); // Generate bonus every 5 seconds when life < maxLife
+
+    function gameOver() {
+        // Останавливаем игру
+        cancelAnimationFrame(animationFrame);
+
+        // Отображаем сообщение "Game Over" и количество набранных очков
+        const score = hero.score;
+        const gameOverText = `Game Over. Score: ${score}`;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'black';
+        ctx.font = '30px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(gameOverText, canvas.width / 2, canvas.height / 2);
+
+        // Добавляем кнопку Restart
+        // const restartButton = document.createElement('button');
+        // restartButton.textContent = 'Restart';
+        // restartButton.style.position = 'absolute';
+        // restartButton.style.top = `${canvas.height / 2 + 50}px`;
+        // restartButton.style.left = `${canvas.width / 2 - 50}px`;
+        // restartButton.addEventListener('click', restartGame);
+        // canvas.parentNode.appendChild(restartButton);
+
+        // Добавляем кнопку Restart
+        const restartButton = document.createElement('button');
+        restartButton.textContent = 'Restart';
+        restartButton.style.position = 'absolute';
+        restartButton.style.top = `${(canvas.height - 80) / 1}px`;
+        // restartButton.style.left = `${(canvas.width - 50) / 2}px`;
+        restartButton.addEventListener('click', restartGame);
+        canvas.parentNode.appendChild(restartButton);
+
+    }
+
+    function restartGame() {
+        // Удаляем кнопку Restart
+        const restartButton = document.querySelector('button');
+        restartButton.parentNode.removeChild(restartButton);
+
+        // Сбрасываем параметры и перезапускаем игру
+        platforms = [];
+        ladders = [];
+        coins = [];
+        bonuses = [];
+        hero = { x: 0, y: 0, dx: 0, dy: 0, onPlatform: false, onLadder: false, jumping: false, life: maxLife, score: 0 };
+
+        init();
+    }
+
+    let animationFrame = null; // Ссылка на текущий кадр анимации
     init();
 </script>
 </body>
