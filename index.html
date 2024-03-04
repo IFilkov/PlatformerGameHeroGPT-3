@@ -59,23 +59,7 @@
         requestAnimationFrame(update);
     }
 
-    // function generatePlatforms() {
-    //     for (let i = 0; i < platformCount; i++) {
-    //         let platformX, platformY;
-    //         do {
-    //             platformX = Math.random() * (canvas.width - platformWidth);
-    //             platformY = i * (canvas.height / platformCount);
-    //         } while (platforms.some(platform => Math.abs(platformX - platform.x) < platformWidth && Math.abs(platformY - platform.y) < platformHeight) ||
-    //                  coins.some(coin => Math.abs(platformX - coin.x) < platformWidth && Math.abs(platformY - coin.y) < platformHeight) ||
-    //                  ladders.some(ladder => Math.abs(platformX - ladder.x) < platformWidth && Math.abs(platformY - ladder.y) < platformHeight) ||
-    //                  platforms.some(platform => Math.abs(platformX + platformWidth - platform.x) < platformWidth && Math.abs(platformY - platform.y) < platformHeight) ||
-    //                  platforms.some(platform => Math.abs(platformY - platform.y) < platformHeight));
-
-    //         platforms.push({ x: platformX, y: platformY });
-    //     }
-    // }
-
-        function generatePlatforms() {
+    function generatePlatforms() {
         for (let i = 0; i < platformCount; i++) {
             let platformX, platformY;
             do {
@@ -85,13 +69,11 @@
                      coins.some(coin => Math.abs(platformX - coin.x) < platformWidth && Math.abs(platformY - coin.y) < platformHeight) ||
                      ladders.some(ladder => Math.abs(platformX - ladder.x) < platformWidth && Math.abs(platformY - ladder.y) < platformHeight) ||
                      platforms.some(platform => Math.abs(platformX + platformWidth - platform.x) < platformWidth && Math.abs(platformY - platform.y) < platformHeight) ||
-                     platforms.some(platform => Math.abs(platformY - platform.y) < platformHeight) ||
-                     enemies.some(enemy => Math.abs(platformX - enemy.x) < platformWidth && Math.abs(platformY - enemy.y) < platformHeight));
+                     platforms.some(platform => Math.abs(platformY - platform.y) < platformHeight));
 
             platforms.push({ x: platformX, y: platformY });
         }
     }
-
 
     function generateLadders() {
         for (let i = 0; i < platformCount - 1; i++) {
@@ -103,7 +85,7 @@
     }
 
     function generateCoins() {
-        coins = []; // Очищаем массив монеток перед генерацией новых
+        coins = [];
         platforms.forEach(platform => {
             const coinX = platform.x + Math.random() * (platformWidth - 2 * coinSize) + coinSize;
             const coinY = platform.y - coinSize;
@@ -124,21 +106,20 @@
     }
 
     function generateEnemies() {
-    // Генерируем врагов, если герой набрал 200 очков и враги еще не были сгенерированы
-            if (hero.score >= 0 && enemies.length === 0) {
-                for (let i = 0; i < 5; i++) { // Создаем пять врагов
-                    const randomPlatform = platforms[Math.floor(Math.random() * platforms.length)]; // Случайная платформа
-                    const enemyX = randomPlatform.x + (platformWidth - heroWidth) / 2; // Позиция по X
-                    const enemyY = randomPlatform.y - heroHeight; // Позиция по Y (по верху платформы)
-                    enemies.push({ x: enemyX, y: enemyY, dx: Math.random() > 0.5 ? -1 : 1 }); // Добавляем врага в массив
-                }
+        if (hero.score >= 0 && enemies.length === 0) {
+            for (let i = 0; i < 5; i++) {
+                const randomPlatform = platforms[Math.floor(Math.random() * platforms.length)];
+                const enemyX = randomPlatform.x + (platformWidth - heroWidth) / 2;
+                const enemyY = randomPlatform.y - heroHeight;
+                enemies.push({ x: enemyX, y: enemyY, dx: Math.random() > 0.5 ? -1 : 1 });
             }
         }
+    }
 
     function drawEnemies() {
         enemies.forEach(enemy => {
-            ctx.fillStyle = '#008000'; // Зеленый цвет
-            ctx.fillRect(enemy.x, enemy.y, heroWidth, heroHeight); // Отрисовываем врага
+            ctx.fillStyle = '#008000';
+            ctx.fillRect(enemy.x, enemy.y, heroWidth, heroHeight);
         });
     }
 
@@ -172,7 +153,7 @@
         ctx.fillText(`Life: ${hero.life}`, canvas.width / 2, 30);
         ctx.fillText(`Score: ${hero.score}`, canvas.width / 2, 60);
 
-        drawEnemies();// Новые изменения!
+        drawEnemies();
     }
 
     function handleKeyDown(event) {
@@ -183,17 +164,17 @@
         } else if (event.key === 'ArrowUp') {
             if (hero.onLadder) {
                 hero.dy = -2;
-                hero.dx = 0; // Prevent horizontal movement on ladder
+                hero.dx = 0;
             }
         } else if (event.key === 'ArrowDown') {
             if (hero.onLadder) {
                 hero.dy = 2;
-                hero.dx = 0; // Prevent horizontal movement on ladder
+                hero.dx = 0;
             }
-        } else if (event.key === ' ') { // Обработка клавиши "пробел"
-            if (!hero.jumping && hero.onPlatform) { // Прыгаем только если не в состоянии прыжка и на платформе
-                hero.dy = -jumpSpeed; // Устанавливаем скорость прыжка вверх
-                hero.jumping = true; // Устанавливаем флаг состояния прыжка
+        } else if (event.key === ' ') {
+            if (!hero.jumping && hero.onPlatform) {
+                hero.dy = -jumpSpeed;
+                hero.jumping = true;
             }
         }
     }
@@ -203,45 +184,36 @@
             hero.dx = 0;
         } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
             hero.dy = 0;
-        } else if (event.key === ' ') { // Обработка клавиши "пробел"
-            if (hero.jumping) { // Если был в состоянии прыжка
-                hero.dy = gravity; // Возвращаем гравитацию
+        } else if (event.key === ' ') {
+            if (hero.jumping) {
+                hero.dy = gravity;
             }
         }
     }
 
-    // Функция для обновления позиций врагов
     function updateEnemies() {
-    enemies.forEach(enemy => {
-        platforms.forEach(platform => {
-            // Проверяем, находится ли враг на текущей платформе
-            if (
-                enemy.x + heroWidth >= platform.x &&
-                enemy.x <= platform.x + platformWidth &&
-                enemy.y + heroHeight === platform.y
-            ) {
-                // Враг находится на платформе
-                // Проверяем, достиг ли враг края платформы
-                if (enemy.x <= platform.x || enemy.x + heroWidth >= platform.x + platformWidth) {
-                    enemy.dx *= -1; // Обратное направление движения
+        enemies.forEach(enemy => {
+            platforms.forEach(platform => {
+                if (
+                    enemy.x + heroWidth >= platform.x &&
+                    enemy.x <= platform.x + platformWidth &&
+                    enemy.y + heroHeight === platform.y
+                ) {
+                    if (enemy.x <= platform.x || enemy.x + heroWidth >= platform.x + platformWidth) {
+                        enemy.dx *= -1;
+                    }
                 }
-            }
+            });
+
+            enemy.x += enemy.dx;
         });
+    }
 
-        // Обновляем позицию врага по горизонтали
-        enemy.x += enemy.dx;
-    });
-}
-
-
-
-
-function update() {
-    if (!hero.onLadder) { // Apply gravity only if not on ladder
+    function update() {
+    if (!hero.onLadder) {
         hero.dy += gravity;
     }
 
-    // Move enemies
     enemies.forEach((enemy, enemyIndex) => {
         if (
             hero.x < enemy.x + heroWidth &&
@@ -249,13 +221,17 @@ function update() {
             hero.y < enemy.y + heroHeight &&
             hero.y + heroHeight > enemy.y
         ) {
-            // Collision detected with enemy
-            hero.life--; // Decrease hero's life
-            enemies.splice(enemyIndex, 1); // Remove enemy from array
+            hero.life--; // Уменьшаем жизни героя при столкновении с врагом
+            enemies.splice(enemyIndex, 1);
+
+            if (hero.life === 0) {
+                gameOver();
+                return;
+            }
+            placeHero();
         }
     });
 
-    // Horizontal movement
     hero.x += hero.dx;
     if (hero.x < 0) {
         hero.x = 0;
@@ -263,10 +239,8 @@ function update() {
         hero.x = canvas.width - heroWidth;
     }
 
-    // Vertical movement
     hero.y += hero.dy;
 
-    // Check collision with platforms
     hero.onPlatform = false;
     platforms.forEach(platform => {
         if (hero.x < platform.x + platformWidth &&
@@ -280,7 +254,6 @@ function update() {
         }
     });
 
-    // Check collision with ladders
     hero.onLadder = false;
     ladders.forEach(ladder => {
         if (hero.x < ladder.x + ladderWidth &&
@@ -288,11 +261,11 @@ function update() {
             hero.y + heroHeight > ladder.y &&
             hero.y < ladder.y + ladderHeight) {
             hero.onLadder = true;
-            if (hero.dy > 0) { // Moving downwards on ladder
+            if (hero.dy > 0) {
                 const nextPlatformIndex = platforms.findIndex(platform => platform.y > ladder.y && platform.x === ladder.x);
                 if (nextPlatformIndex !== -1) {
                     const nextPlatform = platforms[nextPlatformIndex];
-                    if (hero.y + heroHeight + hero.dy > nextPlatform.y) { // Reached next platform, stop descending
+                    if (hero.y + heroHeight + hero.dy > nextPlatform.y) {
                         hero.dy = 0;
                         hero.y = nextPlatform.y - heroHeight;
                     }
@@ -301,7 +274,6 @@ function update() {
         }
     });
 
-    // Check collision with coins
     coins.forEach(coin => {
         if (!coin.collected &&
             hero.x < coin.x + coinSize &&
@@ -311,25 +283,21 @@ function update() {
             coin.collected = true;
             hero.score += 10;
 
-            // Check if the hero collected 10 coins
-            // Check if the hero collected 10 coins
-        if (hero.score % 100 === 0) {
-            platforms = [];
-            ladders = [];
-            coins = [];
-            enemies = []; // Disable enemies when score reaches 200
-            generatePlatforms();
-            generateLadders();
-            generateCoins();
-            generateEnemies();
-        } else if (hero.score === 0) {
-            enemies = []; // Disable enemies when score resets to 0
-        }
-
+            if (hero.score % 100 === 0) {
+                platforms = [];
+                ladders = [];
+                coins = [];
+                enemies = [];
+                generatePlatforms();
+                generateLadders();
+                generateCoins();
+                generateEnemies();
+            } else if (hero.score === 0) {
+                enemies = [];
+            }
         }
     });
 
-    // Check collision with bonuses
     bonuses.forEach(bonus => {
         if (!bonus.collected &&
             hero.x < bonus.x + bonusSize &&
@@ -342,37 +310,30 @@ function update() {
         }
     });
 
-    // Check if the hero falls off the canvas
     if (!hero.onLadder && hero.y > canvas.height) {
-        hero.life--;
+        hero.life = Math.max(0, hero.life - 1); // Уменьшаем жизни героя при падении за пределы canvas
         if (hero.life === 0) {
-            // Game over logic
             gameOver();
             return;
         }
         placeHero();
     }
 
-    
+    draw();
+    generateEnemies();
+    updateEnemies();
+    requestAnimationFrame(update);
+}
 
 
-        draw();
-        generateEnemies(); // Генерация врагов
-        updateEnemies(); // Обновление позиций врагов
-        requestAnimationFrame(update);
-    }
 
     setInterval(() => {
         if (hero.life < maxLife) {
             generateBonus();
         }
-    }, 5000); // Generate bonus every 5 seconds when life < maxLife
+    }, 5000);
 
     function gameOver() {
-        // Останавливаем игру
-        cancelAnimationFrame(animationFrame);
-
-        // Отображаем сообщение "Game Over" и количество набранных очков
         const score = hero.score;
         const gameOverText = `Game Over. Score: ${score}`;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -381,44 +342,29 @@ function update() {
         ctx.textAlign = 'center';
         ctx.fillText(gameOverText, canvas.width / 2, canvas.height / 2);
 
-        // Добавляем кнопку Restart
-        // const restartButton = document.createElement('button');
-        // restartButton.textContent = 'Restart';
-        // restartButton.style.position = 'absolute';
-        // restartButton.style.top = `${canvas.height / 2 + 50}px`;
-        // restartButton.style.left = `${canvas.width / 2 - 50}px`;
-        // restartButton.addEventListener('click', restartGame);
-        // canvas.parentNode.appendChild(restartButton);
-
-        // Добавляем кнопку Restart
         const restartButton = document.createElement('button');
         restartButton.textContent = 'Restart';
         restartButton.style.position = 'absolute';
         restartButton.style.top = `${(canvas.height - 80) / 1}px`;
-        // restartButton.style.left = `${(canvas.width - 50) / 2}px`;
         restartButton.addEventListener('click', restartGame);
         canvas.parentNode.appendChild(restartButton);
-
-
     }
 
     function restartGame() {
-        // Удаляем кнопку Restart
         const restartButton = document.querySelector('button');
         restartButton.parentNode.removeChild(restartButton);
 
-        // Сбрасываем параметры и перезапускаем игру
         platforms = [];
         ladders = [];
         coins = [];
         bonuses = [];
-        enemies = []; // Disable enemies when score resets to 0
+        enemies = [];
         hero = { x: 0, y: 0, dx: 0, dy: 0, onPlatform: false, onLadder: false, jumping: false, life: maxLife, score: 0 };
 
         init();
     }
 
-    let animationFrame = null; // Ссылка на текущий кадр анимации
+    let animationFrame = null;
     init();
 </script>
 </body>
