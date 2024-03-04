@@ -150,8 +150,20 @@
         ctx.fillStyle = '#000';
         ctx.font = '20px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(`Life: ${hero.life}`, canvas.width / 2, 30);
-        ctx.fillText(`Score: ${hero.score}`, canvas.width / 2, 60);
+        // ctx.fillText(`Life: ${hero.life}`, canvas.width / 2, 30); // отображение очков игрока
+        ctx.fillText(`Score: ${hero.score}`, canvas.width / 2, 60);// отображение жизни игрока
+
+                let smiley = '=)';
+            if (hero.life <= 0) {
+                smiley = '=(';
+            } else if (hero.life > 3) {
+                smiley = '=)))';
+            }
+        
+    ctx.fillStyle = '#000';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(smiley, canvas.width / 2, 30);
 
         drawEnemies();
     }
