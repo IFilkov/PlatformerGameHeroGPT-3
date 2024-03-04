@@ -31,7 +31,7 @@
     const ladderWidth = 10;
     const ladderHeight = 50;
     const platformCount = 10;
-    const coinSize = 10;
+    const coinSize = 9;
     const bonusSize = 15;
     const heroWidth = 20;
     const heroHeight = 20;
@@ -85,35 +85,37 @@
     }
 
     function generateCoins() {
-        coins = [];
-        platforms.forEach(platform => {
-            const coinX = platform.x + Math.random() * (platformWidth - 2 * coinSize) + coinSize;
-            const coinY = platform.y - coinSize;
-            coins.push({ x: coinX, y: coinY, collected: false });
-        });
-    }
-
-    function generateBonus() {
-        const x = Math.random() * (canvas.width - bonusSize);
-        const y = Math.random() * (canvas.height - bonusSize);
-        bonuses.push({ x, y, collected: false });
-    }
+    coins = [];
+    platforms.slice(1).forEach(platform => { // Исключаем первую платформу
+        const coinX = platform.x + Math.random() * (platformWidth - 2 * coinSize) + coinSize;
+        const coinY = platform.y - coinSize;
+        coins.push({ x: coinX, y: coinY, collected: false });
+    });
+}
 
     function placeHero() {
-        const randomPlatform = platforms[Math.floor(Math.random() * platforms.length)];
+        const eligiblePlatforms = platforms.slice(1); // Исключаем первую платформу
+        const randomPlatform = eligiblePlatforms[Math.floor(Math.random() * eligiblePlatforms.length)];
         hero.x = randomPlatform.x + (platformWidth - heroWidth) / 2;
         hero.y = randomPlatform.y - heroHeight;
     }
 
     function generateEnemies() {
-        if (hero.score >= 0 && enemies.length === 0) {
-            for (let i = 0; i < 5; i++) {
-                const randomPlatform = platforms[Math.floor(Math.random() * platforms.length)];
-                const enemyX = randomPlatform.x + (platformWidth - heroWidth) / 2;
-                const enemyY = randomPlatform.y - heroHeight;
-                enemies.push({ x: enemyX, y: enemyY, dx: Math.random() > 0.5 ? -1 : 1 });
-            }
+    if (hero.score >= 0 && enemies.length === 0) {
+        const eligiblePlatforms = platforms.slice(1); // Исключаем первую платформу
+        for (let i = 0; i < 5; i++) {
+            const randomPlatform = eligiblePlatforms[Math.floor(Math.random() * eligiblePlatforms.length)];
+            const enemyX = randomPlatform.x + (platformWidth - heroWidth) / 2;
+            const enemyY = randomPlatform.y - heroHeight;
+            enemies.push({ x: enemyX, y: enemyY, dx: Math.random() > 0.5 ? -1 : 1 });
         }
+    }
+}
+
+    function generateBonus() {
+        const x = Math.random() * (canvas.width - bonusSize);
+        const y = Math.random() * (canvas.height - bonusSize);
+        bonuses.push({ x, y, collected: false });
     }
 
     function drawEnemies() {
@@ -150,8 +152,20 @@
         ctx.fillStyle = '#000';
         ctx.font = '20px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(`Life: ${hero.life}`, canvas.width / 2, 30);
-        ctx.fillText(`Score: ${hero.score}`, canvas.width / 2, 60);
+        // ctx.fillText(`Life: ${hero.life}`, canvas.width / 2, 30); // отображение очков игрока
+        ctx.fillText(`Score: ${hero.score}`, canvas.width / 2, 60);// отображение жизни игрока
+
+                let smiley = '=)';
+            if (hero.life <= 0) {
+                smiley = '=(';
+            } else if (hero.life > 3) {
+                smiley = '=)))';
+            }
+        
+    ctx.fillStyle = '#000';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(smiley, canvas.width / 2, 30);
 
         drawEnemies();
     }
@@ -225,7 +239,7 @@
             enemies.splice(enemyIndex, 1);
 
             if (hero.life === 0) {
-                gameOver();
+                // gameOver();
                 return;
             }
             placeHero();
@@ -283,7 +297,7 @@
             coin.collected = true;
             hero.score += 10;
 
-            if (hero.score % 100 === 0) {
+            if (hero.score % 80 === 0) {
                 platforms = [];
                 ladders = [];
                 coins = [];
