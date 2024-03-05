@@ -156,7 +156,10 @@
         ctx.fillText(`Score: ${hero.score}`, canvas.width / 2, 60);// отображение жизни игрока
 
                 let smiley = '\u{1F60A}';
-            if (hero.life <= 0) {
+            if (hero.life === 3) {
+                smiley = '\u{1F60A}';
+            }
+            else if (hero.life <= 0) {
                 smiley = '\u{1F608}';
             } else if (hero.life > 3) {
                 smiley = '\u{1F60E}';
